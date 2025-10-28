@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>maddieland</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gluten:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* BASE STYLES (Desktop/Large Default) */
+        #screen {
+            position: relative;
+            width: 95vw;
+            height: 80vh;
+            max-width: 1200px;
+            margin: 20px auto;
+            overflow: hidden;
+            border-radius: 1rem;
+            background-color: #1c0f1c;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        /* ICON WRAPPER (Fixed Variable Name from our previous discussion) */
+        .icon-wrapper {
+            position: absolute;
+            width: var(--icon-size);
+            height: var(--icon-size);
+            transition: filter 0.1s;
+        }
+
+        .icon {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        body {
+            font-family: "Gluten", cursive;
+            font-size: 4rem;
+            /* Base size for desktop */
+            margin-bottom: 0;
+            color: white;
+            background-color: #1b011c;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h1 {
+            color: #ffffff;
+            font-family: "Gluten", cursive;
+        }
+
+        /* --- MOBILE OPTIMIZATION (Media Query) --- */
+        @media (max-width: 600px) {
+            body {
+                /* Dramatically reduce font size on small screens */
+                font-size: 2rem;
+            }
+
+            #screen {
+                /* Use a little less height on small screens */
+                height: 75vh;
+            }
+        }
+
+        /* --- END Mobile Optimization --- */
+
+
+        /* --- Keyframes and Classes for Color Effects (No changes needed here for mobile) --- */
+
+        /* 1. Continuous Hue Rotation (Smooth Rainbow) */
+        @keyframes color-changing-smooth {
+            from {
+                filter: hue-rotate(0deg);
+            }
+
+            to {
+                filter: hue-rotate(360deg);
+            }
+        }
+
+        .color-changing-smooth .icon {
+            animation: color-changing-smooth 10s linear infinite;
+        }
+
+        /* 2. Discrete Rainbow Switching (Stepped Colors) */
+        @keyframes rainbow-switch {
+            0% {
+                filter: hue-rotate(0deg);
+            }
+
+            16% {
+                filter: hue-rotate(60deg);
+            }
+
+            33% {
+                filter: hue-rotate(120deg);
+            }
+
+            50% {
+                filter: hue-rotate(180deg);
+            }
+
+            66% {
+                filter: hue-rotate(240deg);
+            }
+
+            83% {
+                filter: hue-rotate(300deg);
+            }
+
+            100% {
+                filter: hue-rotate(360deg);
+            }
+        }
+
+        .color-switch-rainbow .icon {
+            animation: rainbow-switch 6s infinite steps(6);
+        }
+
+        /* 3. Rainbow Gradient Overlay (Complex Effect) */
+
+        .gradient-mode {
+            background-color: white;
+            --mask-url: url(var(--icon-url));
+        }
+
+        .gradient-mode .icon {
+            display: none;
+        }
+
+        .gradient-mode:after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right,
+                    red, orange, yellow, green, blue, indigo, violet);
+            -webkit-mask-image: var(--mask-url);
+            mask-image: var(--mask-url);
+            mask-size: contain;
+            mask-repeat: no-repeat;
+            -webkit-mask-size: contain;
+            -webkit-mask-repeat: no-repeat;
+            mix-blend-mode: multiply;
+        }
+
+        @keyframes gradient-shift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .gradient-mode.animated:after {
+            background-size: 200% 200%;
+            animation: gradient-shift 15s ease infinite;
+        }
+
+        /* --- Cat Pop-Up Styles (No changes needed for mobile responsiveness here) --- */
+        .cat-pop-element {
+            position: absolute;
+            opacity: 0;
+            transform: scale(0.5);
+            transform-origin: center center;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        @keyframes cat-pop-animate {
+            0% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+
+            10% {
+                opacity: .5;
+                transform: scale(1.0);
+            }
+
+            80% {
+                opacity: .76;
+                transform: scale(1.0);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+        }
+
+        .cat-popping {
+            animation: cat-pop-animate 2.8s ease-in-out forwards;
+        }
+    </style>
+</head>
+
+<body>
+    <h1> maddieland</h1>
+
+    <script>
+        // Set the font for Tailwind
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+
+    <div id="screen" class="shadow-2xl">
+    </div>
+
+
+    <script>
+        // --- Configuration ---
+        const NUM_ICONS = 25;
+        // BASE SIZES (Desktop)
+        let MIN_SIZE = 50; // Minimum size in pixels
+        let MAX_SIZE = 120; // Maximum size in pixels
+        let CAT_POP_SIZE = 400; // Width/Height for the cat pop-up
+
+        const MIN_SPEED = 1.0;
+        const MAX_SPEED = 4.0;
+
+        // --- MOBILE SIZE ADJUSTMENT ---
+        // Check if the screen width is small (e.g., less than 600px)
+        if (window.innerWidth <= 600) {
+            MIN_SIZE = 30;  // Smaller minimum icon size on mobile
+            MAX_SIZE = 70;  // Smaller maximum icon size on mobile
+            CAT_POP_SIZE = 150; // Much smaller cat pop-up size on mobile
+        }
+        // --- END Mobile Adjustment ---
+
+
+        // --- NEW: Cat Pop-Up Configuration ---
+        const CAT_POP_IMAGE_URLS = [
+            'maddie.png',
+            'maddie2.png',
+            'maddie3.png',
+            'maddie4.png',
+            'maddie5.png',
+            'maddie6.png'
+
+        ];
+        const MAX_SIMULTANEOUS_CATS = 3;
+        const CAT_APPEARANCE_INTERVAL = 3000;
+        const CAT_ANIMATION_DURATION = 2800;
+
+        // --- General Utility Functions ---
+        function getRandomSpeed() {
+            return Math.random() * (MAX_SPEED - MIN_SPEED) + MIN_SPEED;
+        }
+
+        function getRandomSize() {
+            // Uses the dynamically adjusted MIN_SIZE and MAX_SIZE
+            return Math.floor(Math.random() * (MAX_SIZE - MIN_SIZE + 1)) + MIN_SIZE;
+        }
+
+        // --- CUTE_ICON_DATA with Color Mode Properties (No changes) ---
+        const CUTE_ICON_DATA = [
+            { url: 'purple m copy.png', weight: .35, colorMode: 'continuous', size: 200 },
+            { url: 'green flower.png', weight: .2, colorMode: 'continuous', size: 90 },
+            { url: 'green flower copy.png', weight: .8, colorMode: 'continuous', size: 45 },
+            { url: 'green flower.png', weight: 1, colorMode: 'none', size: 110 },
+            { url: 'pink heart.png', weight: 1, colorMode: 'none', size: 110 },
+            { url: 'purple flower .png', weight: 1, colorMode: 'none', size: 110 },
+            { url: 'teal maddieland.png', weight: .75, colorMode: 'none', size: 110 },
+            { url: 'pink m.png', weight: 0.5, colorMode: 'none', size: 90 },
+            { url: 'pink thin maddieland.png', weight: .75, colorMode: 'none', size: 90 },
+            { url: 'purple m.png', weight: .5, colorMode: 'none', size: 70 },
+        ];
+
+        const TOTAL_WEIGHT = CUTE_ICON_DATA.reduce((sum, item) => sum + item.weight, 0);
+
+        function getRandomWeightedIconData() {
+            let random = Math.random() * TOTAL_WEIGHT;
+            for (let i = 0; i < CUTE_ICON_DATA.length; i++) {
+                if (random < CUTE_ICON_DATA[i].weight) {
+                    return CUTE_ICON_DATA[i];
+                }
+                random -= CUTE_ICON_DATA[i].weight;
+            }
+            return CUTE_ICON_DATA[0];
+        }
+
+
+        // --- State Management ---
+        let icons = [];
+        const screenEl = document.getElementById('screen');
+        let screenWidth, screenHeight;
+
+        let catPool = [];
+        let activeCats = 0;
+
+
+        function initializeScreen() {
+            screenWidth = screenEl.clientWidth;
+            screenHeight = screenEl.clientHeight;
+        }
+
+        function createBouncingObject(element, size) {
+            const x = Math.random() * (screenWidth - size);
+            const y = Math.random() * (screenHeight - size);
+            const speedX = getRandomSpeed();
+            const speedY = getRandomSpeed();
+            const dx = (Math.random() > 0.5 ? speedX : -speedX);
+            const dy = (Math.random() > 0.5 ? speedY : -speedY);
+
+            return {
+                element: element,
+                x: x,
+                y: y,
+                dx: dx,
+                dy: dy,
+                size: size
+            };
+        }
+
+        function createIcon() {
+            const iconData = getRandomWeightedIconData();
+            // Note: size here will be a random size between the dynamic MIN/MAX
+            const size = getRandomSize();
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'icon-wrapper';
+            wrapper.style.setProperty('--icon-size', `${size}px`);
+
+            const imgEl = document.createElement('img');
+            imgEl.className = 'icon';
+            imgEl.src = iconData.url;
+            imgEl.alt = `Bouncing Icon`;
+
+            wrapper.appendChild(imgEl);
+
+            switch (iconData.colorMode) {
+                case 'continuous':
+                    wrapper.classList.add('color-changing-smooth');
+                    break;
+                case 'switch':
+                    wrapper.classList.add('color-switch-rainbow');
+                    break;
+                case 'gradient':
+                    wrapper.style.setProperty('--icon-url', `url('${iconData.url}')`);
+                    wrapper.classList.add('gradient-mode');
+                    if (iconData.gradientMode === 'animated') {
+                        wrapper.classList.add('animated');
+                    }
+                    break;
+                case 'none':
+                    break;
+            }
+
+            imgEl.onerror = function () {
+                console.error(`Failed to load image: ${iconData.url}. Using generic fallback.`);
+                this.src = `https://placehold.co/${size}x${size}/555555/ffffff?text=X`;
+                this.onerror = null;
+            };
+
+            screenEl.appendChild(wrapper);
+            return createBouncingObject(wrapper, size);
+        }
+
+        function createCatElement() {
+            const catWrapper = document.createElement('div');
+            catWrapper.className = 'cat-pop-element';
+            // Use the dynamically adjusted CAT_POP_SIZE
+            catWrapper.style.width = `${CAT_POP_SIZE}px`;
+            catWrapper.style.height = `${CAT_POP_SIZE}px`;
+
+            const catImg = document.createElement('img');
+            catImg.className = 'w-full h-full object-contain';
+            catImg.alt = 'Cute Cat';
+
+            catWrapper.appendChild(catImg);
+            screenEl.appendChild(catWrapper);
+
+            return { wrapper: catWrapper, img: catImg, isActive: false };
+        }
+
+        function spawnCatPop() {
+            if (activeCats >= MAX_SIMULTANEOUS_CATS) {
+                return;
+            }
+
+            let catElement = catPool.find(cat => !cat.isActive);
+            if (!catElement) {
+                catElement = createCatElement();
+                catPool.push(catElement);
+            }
+
+            catElement.isActive = true;
+            activeCats++;
+
+            const randomCatUrl = CAT_POP_IMAGE_URLS[Math.floor(Math.random() * CAT_POP_IMAGE_URLS.length)];
+            catElement.img.src = randomCatUrl;
+            catElement.img.onerror = function () {
+                console.error(`Failed to load cat image: ${randomCatUrl}. Using generic fallback.`);
+                this.src = `https://placehold.co/${CAT_POP_SIZE}x${CAT_POP_SIZE}/888888/ffffff?text=CAT`;
+                this.onerror = null;
+            };
+
+            const x = Math.random() * (screenWidth - CAT_POP_SIZE);
+            const y = Math.random() * (screenHeight - CAT_POP_SIZE);
+            catElement.wrapper.style.left = `${x}px`;
+            catElement.wrapper.style.top = `${y}px`;
+
+            catElement.wrapper.classList.remove('cat-popping');
+            void catElement.wrapper.offsetWidth;
+            catElement.wrapper.classList.add('cat-popping');
+
+            setTimeout(() => {
+                catElement.isActive = false;
+                activeCats--;
+            }, CAT_ANIMATION_DURATION);
+        }
+
+
+        function animate() {
+            initializeScreen();
+
+            icons.forEach(icon => {
+                icon.x += icon.dx;
+                icon.y += icon.dy;
+
+                if (icon.x + icon.size > screenWidth) {
+                    icon.x = screenWidth - icon.size;
+                    icon.dx = -getRandomSpeed();
+                } else if (icon.x < 0) {
+                    icon.x = 0;
+                    icon.dx = getRandomSpeed();
+                }
+
+                if (icon.y + icon.size > screenHeight) {
+                    icon.y = screenHeight - icon.size;
+                    icon.dy = -getRandomSpeed();
+                } else if (icon.y < 0) {
+                    icon.y = 0;
+                    icon.dy = getRandomSpeed();
+                }
+
+                icon.element.style.left = `${icon.x}px`;
+                icon.element.style.top = `${icon.y}px`;
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        /**
+         * Initialization function to run once the window loads.
+         */
+        window.onload = function () {
+            initializeScreen();
+
+            for (let i = 0; i < NUM_ICONS; i++) {
+                icons.push(createIcon());
+            }
+
+            animate();
+
+            window.addEventListener('resize', initializeScreen);
+
+            for (let i = 0; i < MAX_SIMULTANEOUS_CATS; i++) {
+                catPool.push(createCatElement());
+            }
+
+            spawnCatPop();
+            setInterval(spawnCatPop, CAT_APPEARANCE_INTERVAL);
+        };
+    </script>
+
+</body>
+
+</html>
